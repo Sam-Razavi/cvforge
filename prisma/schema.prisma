@@ -7,12 +7,25 @@ datasource db {
   provider = "postgresql"
 }
 
+model ApiKey {
+  id         String      @id @default(uuid())
+  keyHash    String      @unique @map("key_hash")
+  label      String
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  lastUsedAt DateTime?   @map("last_used_at")
+  jobs       RewriteJob[]
+
+  @@map("api_keys")
+}
+
 model RewriteJob {
   id             String    @id @default(uuid())
   status         JobStatus @default(QUEUED)
   language       String    @default("en")
   tone           String    @default("professional")
   apiKeyId       String?
+  apiKey         ApiKey?   @relation(fields: [apiKeyId], references: [id])
   inputCvText    String
   jobDescription String
   rewrittenCv    String?
