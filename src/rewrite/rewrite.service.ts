@@ -12,13 +12,14 @@ export class RewriteService {
     @InjectQueue(CV_REWRITE_QUEUE) private readonly queue: Queue,
   ) {}
 
-  async enqueue(dto: RewriteDto, cvText: string) {
+  async enqueue(dto: RewriteDto, cvText: string, apiKeyId?: string) {
     const record = await this.prisma.rewriteJob.create({
       data: {
         inputCvText: cvText,
         jobDescription: dto.jobDescription,
         language: dto.language ?? 'en',
         tone: dto.tone ?? 'professional',
+        ...(apiKeyId ? { apiKeyId } : {}),
       },
     });
 
