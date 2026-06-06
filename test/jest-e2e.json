@@ -7,7 +7,7 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    ".*generated/prisma/client.*": "<rootDir>/../__mocks__/prisma-client.ts"
+    ".*generated/prisma/client.*": "<rootDir>/../src/__mocks__/prisma-client.ts"
   },
   "testPathIgnorePatterns": ["app.e2e-spec.ts"]
 }
