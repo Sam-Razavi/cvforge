@@ -1,31 +1,74 @@
 import { Logger } from '@nestjs/common';
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { CV_REWRITE_QUEUE, RewriteJobData, RewriteJobResult } from './queue.types';
+import { PrismaService } from '../prisma/prisma.service';
+import { OpenAIService } from '../openai/openai.service';
+import { CV_REWRITE_QUEUE, RewriteJobData, RewriteJobResult, ProgressPayload } from './queue.types';
 
-@Processor(CV_REWRITE_QUEUE)
+@Processor(CV_REWRITE_QUEUE, { concurrency: 5 })
 export class RewriteProcessor extends WorkerHost {
   private readonly logger = new Logger(RewriteProcessor.name);
 
-  async process(job: Job<RewriteJobData, RewriteJobResult>): Promise<RewriteJobResult> {
-    this.logger.log(`Processing job ${job.id} (record: ${job.data.jobRecordId})`);
-
-    // Stub — full implementation in Phase 6
-    return {
-      rewrittenCv: '',
-      coverLetter: '',
-      matchScore: 0,
-      keywordsAdded: [],
-    };
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly openai: OpenAIService,
+  ) {
+    super();
   }
 
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed`);
+  async process(job: Job<RewriteJobData, RewriteJobResult>): Promise<RewriteJobResult> {
+    const { jobRecordId, cvText, jobDescription, language, tone } = job.data;
+    this.logger.log(`Processing job ${job.id} (record: ${jobRecordId})`);
+
+    await this.progress(job, { stage: 'extracting', percent: 10 });
+
+    await this.prisma.rewriteJob.update({
+      where: { id: jobRecordId },
+      data: { status: 'PROCESSING' },
+    });
+
+    await this.progress(job, { stage: 'rewriting', percent: 40 });
+    const rewrittenCv = await this.openai.rewriteCv(cvText, jobDescription, language, tone);
+
+    await this.progress(job, { stage: 'cover_letter', percent: 70 });
+    const coverLetter = await this.openai.generateCoverLetter(rewrittenCv, jobDescription, language, tone);
+
+    await this.progress(job, { stage: 'scoring', percent: 90 });
+    const { matchScore, keywordsAdded } = await this.openai.analyzeMatch(rewrittenCv, jobDescription);
+
+    await this.prisma.rewriteJob.update({
+      where: { id: jobRecordId },
+      data: {
+        status: 'COMPLETED',
+        rewrittenCv,
+        coverLetter,
+        matchScore,
+        keywordsAdded,
+        completedAt: new Date(),
+      },
+    });
+
+    await this.progress(job, { stage: 'done', percent: 100 });
+
+    const result: RewriteJobResult = { rewrittenCv, coverLetter, matchScore, keywordsAdded };
+    this.logger.log(`Job ${job.id} completed (score: ${matchScore})`);
+    return result;
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job | undefined, error: Error) {
+  async onFailed(job: Job<RewriteJobData> | undefined, error: Error) {
     this.logger.error(`Job ${job?.id} failed: ${error.message}`);
+    if (job?.data?.jobRecordId) {
+      await this.prisma.rewriteJob
+        .update({
+          where: { id: job.data.jobRecordId },
+          data: { status: 'FAILED', error: error.message },
+        })
+        .catch((e) => this.logger.error(`Failed to persist error state: ${e.message}`));
+    }
+  }
+
+  private async progress(job: Job, payload: ProgressPayload) {
+    await job.updateProgress(payload);
   }
 }

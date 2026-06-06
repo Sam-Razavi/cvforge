@@ -6,6 +6,7 @@ import { OpenAIModule } from './openai/openai.module';
 import { PdfModule } from './pdf/pdf.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QueueModule } from './queue/queue.module';
+import { RewriteModule } from './rewrite/rewrite.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { QueueModule } from './queue/queue.module';
     OpenAIModule,
     PdfModule,
     QueueModule,
+    RewriteModule,
     HealthModule,
   ],
 })
