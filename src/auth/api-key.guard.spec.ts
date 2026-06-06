@@ -1,5 +1,3 @@
-jest.mock('../generated/prisma/client', () => ({ PrismaClient: class {} }));
-
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { ApiKeyGuard } from './api-key.guard';
