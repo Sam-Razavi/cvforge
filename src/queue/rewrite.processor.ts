@@ -3,6 +3,7 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenAIService } from '../openai/openai.service';
+import { EventsGateway } from '../events/events.gateway';
 import { CV_REWRITE_QUEUE, RewriteJobData, RewriteJobResult, ProgressPayload } from './queue.types';
 
 @Processor(CV_REWRITE_QUEUE, { concurrency: 5 })
@@ -12,6 +13,7 @@ export class RewriteProcessor extends WorkerHost {
   constructor(
     private readonly prisma: PrismaService,
     private readonly openai: OpenAIService,
+    private readonly events: EventsGateway,
   ) {
     super();
   }
@@ -48,9 +50,11 @@ export class RewriteProcessor extends WorkerHost {
       },
     });
 
-    await this.progress(job, { stage: 'done', percent: 100 });
-
     const result: RewriteJobResult = { rewrittenCv, coverLetter, matchScore, keywordsAdded };
+
+    await this.progress(job, { stage: 'done', percent: 100 });
+    this.events.emitCompleted(String(job.id), result);
+
     this.logger.log(`Job ${job.id} completed (score: ${matchScore})`);
     return result;
   }
@@ -58,6 +62,7 @@ export class RewriteProcessor extends WorkerHost {
   @OnWorkerEvent('failed')
   async onFailed(job: Job<RewriteJobData> | undefined, error: Error) {
     this.logger.error(`Job ${job?.id} failed: ${error.message}`);
+
     if (job?.data?.jobRecordId) {
       await this.prisma.rewriteJob
         .update({
@@ -65,10 +70,13 @@ export class RewriteProcessor extends WorkerHost {
           data: { status: 'FAILED', error: error.message },
         })
         .catch((e) => this.logger.error(`Failed to persist error state: ${e.message}`));
+
+      this.events.emitFailed(String(job.id), error.message);
     }
   }
 
   private async progress(job: Job, payload: ProgressPayload) {
     await job.updateProgress(payload);
+    this.events.emitProgress(String(job.id), payload);
   }
 }

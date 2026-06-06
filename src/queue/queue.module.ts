@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CV_REWRITE_QUEUE } from './queue.types';
 import { RewriteProcessor } from './rewrite.processor';
 import { OpenAIModule } from '../openai/openai.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OpenAIModule } from '../openai/openai.module';
     }),
     BullModule.registerQueue({ name: CV_REWRITE_QUEUE }),
     OpenAIModule,
+    EventsModule,
   ],
   providers: [RewriteProcessor],
   exports: [BullModule],
