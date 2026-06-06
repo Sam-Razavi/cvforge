@@ -6,7 +6,7 @@ import { OpenAIService } from '../openai/openai.service';
 import { EventsGateway } from '../events/events.gateway';
 import { CV_REWRITE_QUEUE, RewriteJobData, RewriteJobResult, ProgressPayload } from './queue.types';
 
-@Processor(CV_REWRITE_QUEUE, { concurrency: 5 })
+@Processor(CV_REWRITE_QUEUE, { concurrency: 5, limiter: { max: 20, duration: 60_000 } })
 export class RewriteProcessor extends WorkerHost {
   private readonly logger = new Logger(RewriteProcessor.name);
 
