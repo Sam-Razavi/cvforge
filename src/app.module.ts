@@ -1,6 +1,9 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
 import configuration from './config/configuration';
+import { AdminAuthMiddleware } from './admin/admin-auth.middleware';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import { OpenAIModule } from './openai/openai.module';
@@ -15,6 +18,7 @@ import { RewriteModule } from './rewrite/rewrite.module';
       isGlobal: true,
       load: [configuration],
     }),
+    BullBoardModule.forRoot({ route: '/admin/queues', adapter: ExpressAdapter }),
     PrismaModule,
     OpenAIModule,
     PdfModule,
@@ -24,4 +28,10 @@ import { RewriteModule } from './rewrite/rewrite.module';
     HealthModule,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AdminAuthMiddleware)
+      .forRoutes({ path: '/admin/queues*', method: RequestMethod.ALL });
+  }
+}
