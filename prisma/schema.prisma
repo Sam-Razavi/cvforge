@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model RewriteJob {
+  id             String    @id @default(uuid())
+  status         JobStatus @default(QUEUED)
+  language       String    @default("en")
+  tone           String    @default("professional")
+  apiKeyId       String?
+  inputCvText    String
+  jobDescription String
+  rewrittenCv    String?
+  coverLetter    String?
+  matchScore     Int?
+  keywordsAdded  String[]
+  error          String?
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
