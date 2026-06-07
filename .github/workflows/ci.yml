@@ -23,7 +23,7 @@ jobs:
         run: npm test
 
       - name: E2E tests
-        run: npx jest --config ./test/jest-e2e.json
+        run: npm run test:e2e
 
   build:
     runs-on: ubuntu-latest
