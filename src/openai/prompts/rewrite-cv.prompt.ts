@@ -1,21 +1,21 @@
-import { RewriteJobData } from '../../queue/queue.types';
+import { RewriteJobData } from "../../queue/queue.types";
 
 export function buildRewriteCvPrompt(
   cvText: string,
   jobDescription: string,
-  language: RewriteJobData['language'],
-  tone: RewriteJobData['tone'],
+  language: RewriteJobData["language"],
+  tone: RewriteJobData["tone"],
 ): { system: string; user: string } {
-  const toneGuide: Record<RewriteJobData['tone'], string> = {
-    professional: 'formal, precise, and achievement-focused',
-    confident: 'assertive, direct, and impact-driven',
-    concise: 'brief, punchy, and bullet-point-friendly',
+  const toneGuide: Record<RewriteJobData["tone"], string> = {
+    professional: "formal, precise, and achievement-focused",
+    confident: "assertive, direct, and impact-driven",
+    concise: "brief, punchy, and bullet-point-friendly",
   };
 
   const langInstruction =
-    language === 'sv'
-      ? 'Write the entire rewritten CV in Swedish.'
-      : 'Write the entire rewritten CV in English.';
+    language === "sv"
+      ? "Write the entire rewritten CV in Swedish."
+      : "Write the entire rewritten CV in English.";
 
   return {
     system: `You are an expert CV writer and ATS (Applicant Tracking System) specialist.

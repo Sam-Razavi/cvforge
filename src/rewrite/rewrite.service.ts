@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { PrismaService } from '../prisma/prisma.service';
-import { CV_REWRITE_QUEUE, RewriteJobData } from '../queue/queue.types';
-import { RewriteDto } from './dto/rewrite.dto';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import { PrismaService } from "../prisma/prisma.service";
+import { CV_REWRITE_QUEUE, RewriteJobData } from "../queue/queue.types";
+import { RewriteDto } from "./dto/rewrite.dto";
 
 @Injectable()
 export class RewriteService {
@@ -17,8 +21,8 @@ export class RewriteService {
       data: {
         inputCvText: cvText,
         jobDescription: dto.jobDescription,
-        language: dto.language ?? 'en',
-        tone: dto.tone ?? 'professional',
+        language: dto.language ?? "en",
+        tone: dto.tone ?? "professional",
         ...(apiKeyId ? { apiKeyId } : {}),
       },
     });
@@ -27,14 +31,14 @@ export class RewriteService {
       jobRecordId: record.id,
       cvText,
       jobDescription: dto.jobDescription,
-      language: dto.language ?? 'en',
-      tone: dto.tone ?? 'professional',
+      language: dto.language ?? "en",
+      tone: dto.tone ?? "professional",
     };
 
-    const job = await this.queue.add('rewrite', jobData, {
+    const job = await this.queue.add("rewrite", jobData, {
       priority: dto.priority ?? 5,
       attempts: 3,
-      backoff: { type: 'exponential', delay: 5000 },
+      backoff: { type: "exponential", delay: 5000 },
     });
 
     const waitingCount = await this.queue.getWaitingCount();
@@ -42,7 +46,7 @@ export class RewriteService {
     return {
       jobId: job.id,
       recordId: record.id,
-      status: 'queued' as const,
+      status: "queued" as const,
       position: waitingCount,
     };
   }
@@ -58,10 +62,14 @@ export class RewriteService {
   }
 
   async getResult(recordId: string) {
-    const record = await this.prisma.rewriteJob.findUnique({ where: { id: recordId } });
+    const record = await this.prisma.rewriteJob.findUnique({
+      where: { id: recordId },
+    });
     if (!record) throw new NotFoundException(`Record ${recordId} not found`);
-    if (record.status !== 'COMPLETED') {
-      throw new ConflictException(`Job is not yet complete (status: ${record.status})`);
+    if (record.status !== "COMPLETED") {
+      throw new ConflictException(
+        `Job is not yet complete (status: ${record.status})`,
+      );
     }
 
     return {

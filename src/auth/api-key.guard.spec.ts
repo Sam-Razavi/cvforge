@@ -1,6 +1,6 @@
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { ApiKeyGuard } from './api-key.guard';
+import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
+import { createHash } from "crypto";
+import { ApiKeyGuard } from "./api-key.guard";
 
 const makeContext = (headers: Record<string, string>): ExecutionContext =>
   ({
@@ -16,39 +16,45 @@ const mockPrisma = (record: unknown) => ({
   },
 });
 
-describe('ApiKeyGuard', () => {
-  it('throws when x-api-key header is missing', async () => {
+describe("ApiKeyGuard", () => {
+  it("throws when x-api-key header is missing", async () => {
     const guard = new ApiKeyGuard(mockPrisma(null) as never);
-    await expect(guard.canActivate(makeContext({}))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(makeContext({}))).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
-  it('throws when key has wrong prefix', async () => {
+  it("throws when key has wrong prefix", async () => {
     const guard = new ApiKeyGuard(mockPrisma(null) as never);
     await expect(
-      guard.canActivate(makeContext({ 'x-api-key': 'sk-badprefix' })),
+      guard.canActivate(makeContext({ "x-api-key": "sk-badprefix" })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it('throws when key hash is not found in DB', async () => {
+  it("throws when key hash is not found in DB", async () => {
     const guard = new ApiKeyGuard(mockPrisma(null) as never);
     await expect(
-      guard.canActivate(makeContext({ 'x-api-key': 'cvf_aabbccdd' })),
+      guard.canActivate(makeContext({ "x-api-key": "cvf_aabbccdd" })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it('throws when key is inactive', async () => {
-    const guard = new ApiKeyGuard(mockPrisma({ id: '1', active: false }) as never);
+  it("throws when key is inactive", async () => {
+    const guard = new ApiKeyGuard(
+      mockPrisma({ id: "1", active: false }) as never,
+    );
     await expect(
-      guard.canActivate(makeContext({ 'x-api-key': 'cvf_aabbccdd' })),
+      guard.canActivate(makeContext({ "x-api-key": "cvf_aabbccdd" })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it('returns true and sets apiKeyId on valid key', async () => {
-    const raw = 'deadbeef';
-    const keyHash = createHash('sha256').update(raw).digest('hex');
-    const prisma = mockPrisma({ id: 'key-1', active: true, keyHash });
+  it("returns true and sets apiKeyId on valid key", async () => {
+    const raw = "deadbeef";
+    const keyHash = createHash("sha256").update(raw).digest("hex");
+    const prisma = mockPrisma({ id: "key-1", active: true, keyHash });
     const guard = new ApiKeyGuard(prisma as never);
-    const req: Record<string, unknown> = { headers: { 'x-api-key': `cvf_${raw}` } };
+    const req: Record<string, unknown> = {
+      headers: { "x-api-key": `cvf_${raw}` },
+    };
     const ctx = {
       switchToHttp: () => ({ getRequest: () => req }),
     } as unknown as ExecutionContext;
@@ -56,9 +62,9 @@ describe('ApiKeyGuard', () => {
     const result = await guard.canActivate(ctx);
 
     expect(result).toBe(true);
-    expect(req['apiKeyId']).toBe('key-1');
+    expect(req["apiKeyId"]).toBe("key-1");
     expect(prisma.apiKey.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'key-1' } }),
+      expect.objectContaining({ where: { id: "key-1" } }),
     );
   });
 });

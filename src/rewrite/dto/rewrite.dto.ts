@@ -7,7 +7,7 @@ import {
   Min,
   Max,
   MaxLength,
-} from 'class-validator';
+} from "class-validator";
 
 export class RewriteDto {
   @IsOptional()
@@ -22,12 +22,12 @@ export class RewriteDto {
   jobDescription!: string;
 
   @IsOptional()
-  @IsIn(['en', 'sv'])
-  language?: 'en' | 'sv';
+  @IsIn(["en", "sv"])
+  language?: "en" | "sv";
 
   @IsOptional()
-  @IsIn(['professional', 'confident', 'concise'])
-  tone?: 'professional' | 'confident' | 'concise';
+  @IsIn(["professional", "confident", "concise"])
+  tone?: "professional" | "confident" | "concise";
 
   @IsOptional()
   @IsInt()

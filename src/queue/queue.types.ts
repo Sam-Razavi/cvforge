@@ -1,11 +1,11 @@
-export const CV_REWRITE_QUEUE = 'cv-rewrite';
+export const CV_REWRITE_QUEUE = "cv-rewrite";
 
 export interface RewriteJobData {
   jobRecordId: string;
   cvText: string;
   jobDescription: string;
-  language: 'en' | 'sv';
-  tone: 'professional' | 'confident' | 'concise';
+  language: "en" | "sv";
+  tone: "professional" | "confident" | "concise";
 }
 
 export interface RewriteJobResult {
@@ -16,6 +16,6 @@ export interface RewriteJobResult {
 }
 
 export interface ProgressPayload {
-  stage: 'extracting' | 'rewriting' | 'cover_letter' | 'scoring' | 'done';
+  stage: "extracting" | "rewriting" | "cover_letter" | "scoring" | "done";
   percent: number;
 }
